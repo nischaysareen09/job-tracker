@@ -6,13 +6,31 @@
 
 **Track every application · Generate cover letters · Score your resume against any JD**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-job--tracker--beta--eight.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://job-tracker-beta-eight.vercel.app)
-[![Backend](https://img.shields.io/badge/API-Render-46E3B7?style=for-the-badge&logo=render)](https://job-tracker-zp7u.onrender.com/docs)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=for-the-badge&logo=postgresql)](https://neon.tech)
+[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-Visit%20App-6366f1?style=for-the-badge)](https://job-tracker-beta-eight.vercel.app)
+[![API Docs](https://img.shields.io/badge/📡%20API%20Docs-Swagger%20UI-009688?style=for-the-badge)](https://job-tracker-zp7u.onrender.com/docs)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://neon.tech)
 
 </div>
+
+---
+
+## 🖥️ Live App
+
+> **[https://job-tracker-beta-eight.vercel.app](https://job-tracker-beta-eight.vercel.app)**
+
+### Login Page
+![Login Page](https://raw.githubusercontent.com/nischaysareen09/job-tracker/main/screenshots/login.png)
+
+### Kanban Board
+![Kanban Board](https://raw.githubusercontent.com/nischaysareen09/job-tracker/main/screenshots/dashboard-board.png)
+
+### List View
+![List View](https://raw.githubusercontent.com/nischaysareen09/job-tracker/main/screenshots/dashboard-list.png)
+
+### Add Job Form
+![Add Job](https://raw.githubusercontent.com/nischaysareen09/job-tracker/main/screenshots/add-job.png)
 
 ---
 
@@ -20,25 +38,13 @@
 
 | Feature | Description |
 |---|---|
-| 🗂️ **Kanban Board** | Drag & drop cards across Applied → Interviewing → Offer → Rejected |
-| 🤖 **AI Cover Letter** | Paste a job description + your resume → get a tailored cover letter via Groq LLM |
-| 📊 **Resume Scorer** | Get a match % score with strengths, gaps, and analysis vs any JD |
-| 📈 **Analytics Dashboard** | Application funnel, response rate, offer rate at a glance |
+| 🗂️ **Drag & Drop Kanban** | Move cards across Applied → Interviewing → Offer → Rejected |
+| 🤖 **AI Cover Letter** | Paste a JD + your resume → tailored cover letter via Groq LLM |
+| 📊 **Resume Match Scorer** | Match % score with strengths, gaps, and analysis vs any JD |
+| 📈 **Analytics Dashboard** | Pipeline funnel, response rate, offer rate at a glance |
+| 📋 **Board + List View** | Toggle between visual Kanban and sortable table |
 | 🔐 **JWT Auth** | Secure register/login with bcrypt password hashing |
-| 📋 **List + Board View** | Toggle between Kanban and sortable table view |
-| 🌐 **Fully Deployed** | Live frontend on Vercel, backend on Render, database on Neon |
-
----
-
-## 🖥️ Screenshots
-
-> **Login Page** — Split-panel SaaS design
-
-![Login](https://job-tracker-beta-eight.vercel.app/og-login.png)
-
-> **Dashboard** — Kanban board with drag & drop
-
-![Dashboard](https://job-tracker-beta-eight.vercel.app/og-dashboard.png)
+| 🌐 **Fully Deployed** | Frontend on Vercel, backend on Render, database on Neon |
 
 ---
 
@@ -58,7 +64,7 @@
 - **Pydantic v2** — request/response validation
 - **python-jose** — JWT token auth
 - **passlib + bcrypt** — password hashing
-- **Groq SDK** — LLM API (Llama 3.3 70B) for AI features
+- **Groq SDK** — Llama 3.3 70B for AI cover letter + resume scoring
 
 ### Infrastructure
 - **Neon** — serverless PostgreSQL
@@ -72,16 +78,16 @@
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- PostgreSQL (local) or a [Neon](https://neon.tech) connection string
+- PostgreSQL or a [Neon](https://neon.tech) connection string
 
-### 1. Clone the repo
+### 1. Clone
 
 ```bash
 git clone https://github.com/nischaysareen09/job-tracker.git
 cd job-tracker
 ```
 
-### 2. Backend setup
+### 2. Backend
 
 ```bash
 cd backend
@@ -95,7 +101,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create a `.env` file in `backend/`:
+Create `backend/.env`:
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/job_tracker
@@ -103,23 +109,19 @@ SECRET_KEY=your-random-secret-key-at-least-32-chars
 GROQ_API_KEY=your-groq-api-key
 ```
 
-Start the backend:
-
 ```bash
 uvicorn main:app --reload
+# API docs → http://localhost:8000/docs
 ```
 
-API docs available at: `http://localhost:8000/docs`
-
-### 3. Frontend setup
+### 3. Frontend
 
 ```bash
 cd ../frontend
 npm install
 npm run dev
+# App → http://localhost:5173
 ```
-
-App available at: `http://localhost:5173`
 
 ---
 
@@ -163,6 +165,7 @@ job-tracker/
 │           ├── Dashboard.jsx # Kanban board + analytics
 │           ├── AddJob.jsx   # Add application form
 │           └── JobDetail.jsx # Job detail + AI features
+├── screenshots/             # App screenshots
 └── README.md
 ```
 
@@ -174,22 +177,17 @@ job-tracker/
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `SECRET_KEY` | Random string for JWT signing (min 32 chars) |
-| `GROQ_API_KEY` | From [console.groq.com](https://console.groq.com) (free) |
+| `GROQ_API_KEY` | From [console.groq.com](https://console.groq.com) — free tier |
 
 ---
 
 ## 🧠 AI Features
 
-Both AI features use **Groq's Llama 3.3 70B** model via the Groq API (free tier):
+Both AI features use **Groq's Llama 3.3 70B** model (free tier):
 
-**Cover Letter Generator**
-- Input: job description + resume text + company + role
-- Output: tailored 3-4 paragraph cover letter
-- Automatically saved to the job application record
+**Cover Letter Generator** — paste a job description + your resume text, get a tailored 3-4 paragraph cover letter. Saved automatically to the job record.
 
-**Resume Match Scorer**
-- Input: job description + resume text
-- Output: match % score (0–100) + overall analysis + key strengths + skill gaps
+**Resume Match Scorer** — paste a JD + your resume, get a 0–100 match score, overall analysis, key strengths, and skill gaps.
 
 ---
 
@@ -200,5 +198,5 @@ MIT — feel free to fork and build on this.
 ---
 
 <div align="center">
-  Made by <a href="https://github.com/nischaysareen09">Nischay Sareen</a>
+  Built by <a href="https://github.com/nischaysareen09">Nischay Sareen</a>
 </div>
