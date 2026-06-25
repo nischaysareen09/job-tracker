@@ -7,27 +7,44 @@ import api from '../api'
 const STATUSES = ['Saved', 'Applied', 'Interviewing', 'Offer', 'Rejected']
 
 const STATUS_CONFIG = {
-  Saved:        { color: '#64748b', light: '#f8fafc', dot: '#94a3b8', border: '#e2e8f0', label: 'bg-slate-100 text-slate-600' },
-  Applied:      { color: '#2563eb', light: '#eff6ff', dot: '#3b82f6', border: '#bfdbfe', label: 'bg-blue-50 text-blue-700' },
-  Interviewing: { color: '#d97706', light: '#fffbeb', dot: '#f59e0b', border: '#fde68a', label: 'bg-amber-50 text-amber-700' },
-  Offer:        { color: '#059669', light: '#ecfdf5', dot: '#10b981', border: '#a7f3d0', label: 'bg-emerald-50 text-emerald-700' },
-  Rejected:     { color: '#dc2626', light: '#fff1f2', dot: '#f43f5e', border: '#fecdd3', label: 'bg-rose-50 text-rose-600' },
+  Saved:        { 
+    gradient: 'linear-gradient(135deg, #1e293b, #334155)',
+    accent: '#94a3b8', glow: '0 0 20px rgba(148,163,184,0.15)',
+    badge: 'rgba(148,163,184,0.2)', badgeText: '#cbd5e1',
+    border: 'rgba(148,163,184,0.2)', header: 'rgba(148,163,184,0.08)',
+  },
+  Applied:      { 
+    gradient: 'linear-gradient(135deg, #1e1b4b, #2e1065)',
+    accent: '#818cf8', glow: '0 0 20px rgba(129,140,248,0.2)',
+    badge: 'rgba(129,140,248,0.2)', badgeText: '#a5b4fc',
+    border: 'rgba(129,140,248,0.25)', header: 'rgba(129,140,248,0.08)',
+  },
+  Interviewing: { 
+    gradient: 'linear-gradient(135deg, #1c1400, #2d1f00)',
+    accent: '#fbbf24', glow: '0 0 20px rgba(251,191,36,0.2)',
+    badge: 'rgba(251,191,36,0.2)', badgeText: '#fcd34d',
+    border: 'rgba(251,191,36,0.25)', header: 'rgba(251,191,36,0.08)',
+  },
+  Offer:        { 
+    gradient: 'linear-gradient(135deg, #022c1e, #064e3b)',
+    accent: '#34d399', glow: '0 0 20px rgba(52,211,153,0.2)',
+    badge: 'rgba(52,211,153,0.2)', badgeText: '#6ee7b7',
+    border: 'rgba(52,211,153,0.25)', header: 'rgba(52,211,153,0.08)',
+  },
+  Rejected:     { 
+    gradient: 'linear-gradient(135deg, #1f0000, #3b0000)',
+    accent: '#f87171', glow: '0 0 20px rgba(248,113,113,0.2)',
+    badge: 'rgba(248,113,113,0.2)', badgeText: '#fca5a5',
+    border: 'rgba(248,113,113,0.25)', header: 'rgba(248,113,113,0.08)',
+  },
 }
 
-const STAT_ICONS = {
-  'Total': '📋',
-  'Interviews': '🎯',
-  'Offers': '🏆',
-  'Match': '⚡',
-}
-
-function Avatar({ name, status, size = 'md' }) {
-  const colors = ['#2563eb', '#7c3aed', '#db2777', '#059669', '#d97706', '#dc2626']
+function Avatar({ name }) {
+  const colors = ['#818cf8', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#38bdf8']
   const color = colors[name.charCodeAt(0) % colors.length]
-  const sz = size === 'sm' ? 'w-7 h-7 text-xs' : 'w-9 h-9 text-sm'
   return (
-    <div className={`${sz} rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm`}
-      style={{ backgroundColor: color }}>
+    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+      style={{ backgroundColor: color + '22', color, border: `1px solid ${color}44` }}>
       {name[0].toUpperCase()}
     </div>
   )
@@ -44,42 +61,45 @@ function JobCard({ job, index }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => navigate(`/jobs/${job.id}`)}
-          className={`rounded-xl p-3.5 cursor-pointer transition-all duration-150 select-none border
-            ${snapshot.isDragging
-              ? 'shadow-2xl border-blue-300 rotate-2 scale-[1.03] bg-white'
-              : 'bg-white border-gray-100 hover:border-blue-200 hover:shadow-md'
-            }`}
+          className="rounded-xl p-3.5 cursor-pointer select-none transition-all duration-150"
+          style={{
+            background: snapshot.isDragging
+              ? 'rgba(255,255,255,0.12)'
+              : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${snapshot.isDragging ? cfg.accent + '80' : cfg.border}`,
+            boxShadow: snapshot.isDragging ? cfg.glow + ', 0 20px 40px rgba(0,0,0,0.5)' : 'none',
+            transform: snapshot.isDragging ? 'rotate(2deg) scale(1.03)' : 'none',
+          }}
         >
-          <div className="flex items-start justify-between gap-2 mb-2.5">
-            <Avatar name={job.company} status={job.status} size="sm" />
-            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${cfg.label}`}>
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <Avatar name={job.company} />
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: cfg.badge, color: cfg.badgeText }}>
               {job.status}
             </span>
           </div>
-          <p className="font-semibold text-sm text-gray-900 leading-tight">{job.company}</p>
-          <p className="text-xs text-gray-500 mt-0.5 truncate">{job.role}</p>
+          <p className="font-semibold text-sm text-white leading-tight">{job.company}</p>
+          <p className="text-xs mt-0.5 truncate" style={{ color: cfg.accent + 'aa' }}>{job.role}</p>
 
           {job.location && (
-            <div className="flex items-center gap-1 mt-2">
-              <span className="text-[10px] text-gray-400">📍 {job.location}</span>
-            </div>
+            <p className="text-[10px] mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>📍 {job.location}</p>
           )}
 
           {job.match_score && (
-            <div className="mt-3 pt-2.5 border-t border-gray-50">
+            <div className="mt-3 pt-2.5" style={{ borderTop: `1px solid ${cfg.border}` }}>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] text-gray-400 font-medium">MATCH</span>
-                <span className="text-[10px] font-bold" style={{ color: cfg.color }}>{job.match_score}%</span>
+                <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>MATCH</span>
+                <span className="text-[10px] font-bold" style={{ color: cfg.accent }}>{job.match_score}%</span>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-1">
+              <div className="w-full rounded-full h-1" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
                 <div className="h-1 rounded-full transition-all duration-700"
-                  style={{ width: `${job.match_score}%`, backgroundColor: cfg.color }} />
+                  style={{ width: `${job.match_score}%`, backgroundColor: cfg.accent }} />
               </div>
             </div>
           )}
 
           {job.applied_date && (
-            <p className="text-[10px] text-gray-300 mt-2">
+            <p className="text-[10px] mt-2" style={{ color: 'rgba(255,255,255,0.25)' }}>
               {new Date(job.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </p>
           )}
@@ -89,15 +109,16 @@ function JobCard({ job, index }) {
   )
 }
 
-function StatCard({ icon, label, value, sub, accent }) {
+function StatCard({ icon, label, value, accent }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="rounded-2xl p-5 transition-all hover:scale-[1.02]"
+      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xl">{icon}</span>
-        {sub && <span className="text-xs text-gray-400 font-medium">{sub}</span>}
+        <span className="text-2xl">{icon}</span>
+        <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accent }} />
       </div>
-      <p className="text-3xl font-bold tracking-tight" style={{ color: accent || '#111827' }}>{value}</p>
-      <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wide">{label}</p>
+      <p className="text-3xl font-bold text-white tracking-tight">{value}</p>
+      <p className="text-xs mt-1 uppercase tracking-widest font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>{label}</p>
     </div>
   )
 }
@@ -128,97 +149,95 @@ export default function Dashboard() {
   const byStatus = (s) => jobs.filter((j) => j.status === s)
 
   const chartData = STATUSES.map((s) => ({
-    name: s, count: byStatus(s).length, color: STATUS_CONFIG[s].color,
+    name: s, count: byStatus(s).length, color: STATUS_CONFIG[s].accent,
   }))
 
   const logout = () => { localStorage.removeItem('token'); navigate('/login') }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f0f4ff' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
       <div className="text-center">
-        <div className="w-10 h-10 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-sm text-gray-400 font-medium">Loading your dashboard…</p>
+        <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>Loading your dashboard…</p>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #fafafa 50%, #f0fdf4 100%)' }}>
+    <div className="min-h-screen" style={{ background: '#0a0a0a' }}>
       {/* Navbar */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-white shadow-sm px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+      <nav className="px-6 py-4 flex items-center justify-between sticky top-0 z-20"
+        style={{ background: 'rgba(10,10,10,0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md"
-            style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
           <div>
-            <p className="font-bold text-gray-900 text-base leading-tight">JobTracker</p>
-            <p className="text-[10px] text-gray-400 leading-tight">{jobs.length} applications</p>
+            <p className="font-bold text-white text-sm leading-tight">JobTracker</p>
+            <p className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.35)' }}>{jobs.length} applications</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button onClick={() => setShowChart(!showChart)}
-            className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all border ${
-              showChart
-                ? 'bg-blue-50 text-blue-600 border-blue-200'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-            }`}>
+            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
+            style={{
+              background: showChart ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
+              color: showChart ? '#818cf8' : 'rgba(255,255,255,0.5)',
+              border: `1px solid ${showChart ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            }}>
             📊 Analytics
           </button>
-          <div className="flex bg-gray-100 rounded-lg p-0.5">
+          <div className="flex rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
             {['kanban', 'list'].map((v) => (
               <button key={v} onClick={() => setView(v)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  view === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-                }`}>
+                className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all"
+                style={{
+                  background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: view === v ? 'white' : 'rgba(255,255,255,0.4)',
+                }}>
                 {v === 'kanban' ? '⊞ Board' : '☰ List'}
               </button>
             ))}
           </div>
           <button onClick={() => navigate('/add')}
-            className="text-sm font-semibold text-white px-4 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all"
-            style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}>
+            className="text-sm font-bold text-white px-4 py-1.5 rounded-lg transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             + Add Job
           </button>
-          <button onClick={logout} className="text-xs text-gray-400 hover:text-gray-600 px-2 transition-colors">
+          <button onClick={logout} className="text-xs px-2 transition-colors"
+            style={{ color: 'rgba(255,255,255,0.3)' }}>
             Sign out
           </button>
         </div>
       </nav>
 
-      <div className="p-6 max-w-[1400px] mx-auto">
+      <div className="p-6 max-w-[1500px] mx-auto">
         {/* Stats */}
         {analytics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <StatCard icon="📋" label="Total Applied" value={analytics.total} />
-            <StatCard icon="🎯" label="Interviews" value={analytics.by_status?.Interviewing || 0}
-              sub={`${analytics.interview_rate || 0}% rate`} accent="#d97706" />
-            <StatCard icon="🏆" label="Offers" value={analytics.by_status?.Offer || 0}
-              sub={`${analytics.offer_rate || 0}% rate`} accent="#059669" />
-            <StatCard icon="⚡" label="Avg Match" value={analytics.avg_match_score ? `${analytics.avg_match_score}%` : '—'}
-              accent="#2563eb" />
+            <StatCard icon="📋" label="Total Applied" value={analytics.total} accent="#818cf8" />
+            <StatCard icon="🎯" label="Interviews" value={analytics.by_status?.Interviewing || 0} accent="#fbbf24" />
+            <StatCard icon="🏆" label="Offers" value={analytics.by_status?.Offer || 0} accent="#34d399" />
+            <StatCard icon="⚡" label="Avg Match" value={analytics.avg_match_score ? `${analytics.avg_match_score}%` : '—'} accent="#f87171" />
           </div>
         )}
 
         {/* Chart */}
         {showChart && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-gray-900">Application Pipeline</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Applications by stage</p>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData} barSize={44} barGap={8}>
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
+          <div className="rounded-2xl p-6 mb-6"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <h3 className="font-bold text-white text-sm mb-4">Application Pipeline</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={chartData} barSize={44}>
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
                 <Tooltip
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', fontSize: '12px' }}
-                  cursor={{ fill: '#f3f4f6', radius: 6 }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#1a1a1a', color: 'white', fontSize: '12px' }}
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                 />
                 <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                   {chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
@@ -237,40 +256,41 @@ export default function Dashboard() {
                 const count = byStatus(status).length
                 return (
                   <div key={status} className="flex-shrink-0 w-[260px]">
-                    {/* Column header */}
-                    <div className="flex items-center justify-between mb-3 px-1">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
-                        <span className="text-sm font-bold text-gray-700">{status}</span>
-                      </div>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: cfg.light, color: cfg.color, border: `1px solid ${cfg.border}` }}>
-                        {count}
-                      </span>
-                    </div>
-
-                    <Droppable droppableId={status}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className="min-h-32 rounded-2xl p-2 space-y-2 transition-all duration-200"
-                          style={{
-                            backgroundColor: snapshot.isDraggingOver ? cfg.light : 'transparent',
-                            border: snapshot.isDraggingOver ? `2px dashed ${cfg.border}` : '2px dashed transparent',
-                          }}
-                        >
-                          {byStatus(status).map((job, i) => <JobCard key={job.id} job={job} index={i} />)}
-                          {provided.placeholder}
-                          {count === 0 && !snapshot.isDraggingOver && (
-                            <div className="flex flex-col items-center justify-center py-10 gap-2 opacity-40">
-                              <div className="w-10 h-10 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl">+</div>
-                              <p className="text-xs text-gray-400">Drag here</p>
-                            </div>
-                          )}
+                    {/* Column */}
+                    <div className="rounded-2xl overflow-hidden" style={{ background: cfg.gradient, border: `1px solid ${cfg.border}`, boxShadow: cfg.glow }}>
+                      {/* Column header */}
+                      <div className="px-4 py-3 flex items-center justify-between" style={{ background: cfg.header, borderBottom: `1px solid ${cfg.border}` }}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.accent, boxShadow: `0 0 6px ${cfg.accent}` }} />
+                          <span className="text-sm font-bold" style={{ color: cfg.accent }}>{status}</span>
                         </div>
-                      )}
-                    </Droppable>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: cfg.badge, color: cfg.badgeText }}>
+                          {count}
+                        </span>
+                      </div>
+
+                      <Droppable droppableId={status}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className="p-2 space-y-2 min-h-32 transition-all duration-200"
+                            style={{ background: snapshot.isDraggingOver ? 'rgba(255,255,255,0.03)' : 'transparent' }}
+                          >
+                            {byStatus(status).map((job, i) => <JobCard key={job.id} job={job} index={i} />)}
+                            {provided.placeholder}
+                            {count === 0 && !snapshot.isDraggingOver && (
+                              <div className="flex flex-col items-center justify-center py-10 gap-2">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                                  style={{ border: `2px dashed ${cfg.border}`, color: cfg.accent + '44' }}>+</div>
+                                <p className="text-[10px] font-medium" style={{ color: cfg.accent + '44' }}>Drag here</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Droppable>
+                    </div>
                   </div>
                 )
               })}
@@ -280,12 +300,13 @@ export default function Dashboard() {
 
         {/* List view */}
         {view === 'list' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-50">
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   {['Company', 'Role', 'Status', 'Location', 'Match', 'Date'].map((h) => (
-                    <th key={h} className="text-left px-5 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">{h}</th>
+                    <th key={h} className="text-left px-5 py-4 text-[11px] font-bold uppercase tracking-widest"
+                      style={{ color: 'rgba(255,255,255,0.3)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -294,24 +315,28 @@ export default function Dashboard() {
                   const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.Applied
                   return (
                     <tr key={job.id} onClick={() => navigate(`/jobs/${job.id}`)}
-                      className="border-b border-gray-50 hover:bg-blue-50/40 cursor-pointer transition-colors group">
-                      <td className="px-5 py-3.5">
+                      className="cursor-pointer transition-colors"
+                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <Avatar name={job.company} status={job.status} size="sm" />
-                          <span className="font-semibold text-gray-900">{job.company}</span>
+                          <Avatar name={job.company} />
+                          <span className="font-semibold text-white">{job.company}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs">{job.role}</td>
-                      <td className="px-5 py-3.5">
-                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${cfg.label}`}>{job.status}</span>
+                      <td className="px-5 py-4 text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{job.role}</td>
+                      <td className="px-5 py-4">
+                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+                          style={{ backgroundColor: cfg.badge, color: cfg.badgeText }}>{job.status}</span>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-400 text-xs">{job.location || '—'}</td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-4 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{job.location || '—'}</td>
+                      <td className="px-5 py-4">
                         {job.match_score
-                          ? <span className="font-bold text-blue-600">{job.match_score}%</span>
-                          : <span className="text-gray-300">—</span>}
+                          ? <span className="font-bold" style={{ color: cfg.accent }}>{job.match_score}%</span>
+                          : <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
                       </td>
-                      <td className="px-5 py-3.5 text-gray-400 text-xs">
+                      <td className="px-5 py-4 text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
                         {job.applied_date ? new Date(job.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                       </td>
                     </tr>
@@ -321,8 +346,8 @@ export default function Dashboard() {
                   <tr>
                     <td colSpan={6} className="py-20 text-center">
                       <p className="text-4xl mb-3">📭</p>
-                      <p className="font-semibold text-gray-400">No applications yet</p>
-                      <p className="text-sm text-gray-300 mt-1">Click "+ Add Job" to track your first application</p>
+                      <p className="font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>No applications yet</p>
+                      <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>Click "+ Add Job" to get started</p>
                     </td>
                   </tr>
                 )}
@@ -333,4 +358,4 @@ export default function Dashboard() {
       </div>
     </div>
   )
-} 
+}

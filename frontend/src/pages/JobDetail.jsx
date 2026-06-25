@@ -1,294 +1,144 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../api'
 
-const STATUSES = ['Saved', 'Applied', 'Interviewing', 'Offer', 'Rejected']
-
-const STATUS_STYLES = {
-  Saved:        'bg-gray-100 text-gray-600',
-  Applied:      'bg-brand-50 text-brand-700',
-  Interviewing: 'bg-amber-50 text-amber-700',
-  Offer:        'bg-green-50 text-green-700',
-  Rejected:     'bg-red-50 text-red-600',
-}
-
-export default function JobDetail() {
-  const { id } = useParams()
+export default function Login() {
+  const [mode, setMode] = useState('login')
+  const [form, setForm] = useState({ email: '', password: '', full_name: '' })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const [job, setJob] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [tab, setTab] = useState('details') // 'details' | 'ai'
+  const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
-  // AI states
-  const [resumeText, setResumeText] = useState('')
-  const [aiLoading, setAiLoading] = useState('')
-  const [coverLetter, setCoverLetter] = useState('')
-  const [matchResult, setMatchResult] = useState(null)
-
-  useEffect(() => {
-    api.get(`/applications/${id}`)
-      .then(({ data }) => { setJob(data); setCoverLetter(data.cover_letter || '') })
-      .finally(() => setLoading(false))
-  }, [id])
-
-  const updateField = (field, value) => setJob({ ...job, [field]: value })
-
-  const save = async () => {
-    setSaving(true)
+  const submit = async () => {
+    setError('')
+    setLoading(true)
     try {
-      const { data } = await api.patch(`/applications/${id}`, job)
-      setJob(data)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const deleteJob = async () => {
-    if (!confirm('Delete this application?')) return
-    await api.delete(`/applications/${id}`)
-    navigate('/')
-  }
-
-  const generateCoverLetter = async () => {
-    if (!resumeText) { alert('Paste your resume text first'); return }
-    if (!job.job_description) { alert('Add a job description first'); return }
-    setAiLoading('cover')
-    try {
-      const { data } = await api.post('/ai/cover-letter', {
-        job_description: job.job_description,
-        resume_text: resumeText,
-        company: job.company,
-        role: job.role,
-      })
-      setCoverLetter(data.cover_letter)
-      await api.patch(`/applications/${id}`, { cover_letter: data.cover_letter })
+      const { data } = await api.post(
+        mode === 'login' ? '/auth/login' : '/auth/register',
+        mode === 'login' ? { email: form.email, password: form.password } : form
+      )
+      localStorage.setItem('token', data.access_token)
+      navigate('/')
     } catch (err) {
-      alert('AI generation failed — check your Groq API key')
+      setError(err.response?.data?.detail || 'Something went wrong')
     } finally {
-      setAiLoading('')
+      setLoading(false)
     }
   }
-
-  const scoreResume = async () => {
-    if (!resumeText) { alert('Paste your resume text first'); return }
-    if (!job.job_description) { alert('Add a job description first'); return }
-    setAiLoading('score')
-    try {
-      const { data } = await api.post('/ai/match-score', {
-        job_description: job.job_description,
-        resume_text: resumeText,
-      })
-      setMatchResult(data)
-      await api.patch(`/applications/${id}`, { match_score: data.score, match_analysis: data.analysis })
-      setJob({ ...job, match_score: data.score, match_analysis: data.analysis })
-    } catch (err) {
-      alert('AI scoring failed — check your Groq API key')
-    } finally {
-      setAiLoading('')
-    }
-  }
-
-  if (loading) return (
-    <div className="min-h-screen bg-surface flex items-center justify-center">
-      <p className="text-gray-400 text-sm">Loading…</p>
-    </div>
-  )
-  if (!job) return <div className="p-6 text-red-500">Job not found</div>
 
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="text-gray-400 hover:text-gray-600">← Back</button>
-          <span className="text-gray-300">|</span>
-          <div>
-            <span className="font-semibold text-gray-900">{job.company}</span>
-            <span className="text-gray-400 mx-2">·</span>
-            <span className="text-gray-600 text-sm">{job.role}</span>
-          </div>
-          <span className={`text-xs font-medium px-2 py-1 rounded-full ${STATUS_STYLES[job.status]}`}>{job.status}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={save} disabled={saving} className="btn-primary text-sm py-1.5">
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
-          <button onClick={deleteJob} className="text-sm text-red-400 hover:text-red-600 px-2">Delete</button>
-        </div>
-      </nav>
+    <div className="min-h-screen flex" style={{ background: '#0a0a0a' }}>
+      {/* Left panel */}
+      <div className="hidden lg:flex flex-col justify-between w-[45%] p-12 relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}>
+        {/* Glow orbs */}
+        <div className="absolute top-20 left-20 w-64 h-64 rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #818cf8, transparent)', filter: 'blur(40px)' }} />
+        <div className="absolute bottom-20 right-10 w-48 h-48 rounded-full opacity-15"
+          style={{ background: 'radial-gradient(circle, #34d399, transparent)', filter: 'blur(40px)' }} />
 
-      <div className="max-w-4xl mx-auto p-6">
-        {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-6">
-          {['details', 'ai'].map((t) => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>
-              {t === 'details' ? '📋 Details' : '✨ AI Features'}
-            </button>
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(129,140,248,0.2)', border: '1px solid rgba(129,140,248,0.3)' }}>
+            <svg className="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <span className="text-white font-bold text-lg">JobTracker</span>
+        </div>
+
+        <div className="relative z-10">
+          <h2 className="text-4xl font-bold text-white leading-tight mb-4">
+            Land your dream role, faster.
+          </h2>
+          <p className="text-indigo-300 text-base leading-relaxed mb-10">
+            Track every application, generate AI cover letters, and score your resume against any job description.
+          </p>
+          {[
+            { icon: '⚡', text: 'AI-powered cover letter generator', color: '#fbbf24' },
+            { icon: '🎯', text: 'Resume-JD match scoring with gap analysis', color: '#818cf8' },
+            { icon: '📊', text: 'Visual Kanban board with drag & drop', color: '#34d399' },
+            { icon: '📈', text: 'Analytics dashboard to track your pipeline', color: '#f87171' },
+          ].map(({ icon, text, color }) => (
+            <div key={text} className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                style={{ backgroundColor: color + '22', border: `1px solid ${color}33` }}>{icon}</div>
+              <span className="text-indigo-200 text-sm">{text}</span>
+            </div>
           ))}
         </div>
 
-        {/* Details Tab */}
-        {tab === 'details' && (
-          <div className="grid grid-cols-3 gap-6">
-            <div className="col-span-2 space-y-5">
-              <div className="card p-5 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Company</label>
-                    <input className="input" value={job.company} onChange={(e) => updateField('company', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="label">Role</label>
-                    <input className="input" value={job.role} onChange={(e) => updateField('role', e.target.value)} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Status</label>
-                    <select className="input" value={job.status} onChange={(e) => updateField('status', e.target.value)}>
-                      {STATUSES.map((s) => <option key={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label">Location</label>
-                    <input className="input" value={job.location || ''} onChange={(e) => updateField('location', e.target.value)} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Salary Range</label>
-                    <input className="input" value={job.salary_range || ''} onChange={(e) => updateField('salary_range', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="label">Job URL</label>
-                    <input className="input" value={job.job_url || ''} onChange={(e) => updateField('job_url', e.target.value)} />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">Job Description</label>
-                  <textarea className="input min-h-32 resize-none" value={job.job_description || ''}
-                    onChange={(e) => updateField('job_description', e.target.value)} />
-                </div>
-                <div>
-                  <label className="label">Notes</label>
-                  <textarea className="input min-h-20 resize-none" value={job.notes || ''}
-                    onChange={(e) => updateField('notes', e.target.value)} />
-                </div>
-              </div>
+        <p className="text-indigo-400 text-xs relative z-10">Built with React · FastAPI · PostgreSQL · Groq AI</p>
+      </div>
+
+      {/* Right panel */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-3"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white">JobTracker</h1>
+          </div>
+
+          <div className="rounded-3xl p-8" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <h2 className="text-2xl font-bold text-white mb-1">
+              {mode === 'login' ? 'Welcome back' : 'Get started'}
+            </h2>
+            <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {mode === 'login' ? 'Sign in to your account' : 'Create your free account'}
+            </p>
+
+            <div className="flex rounded-xl p-1 mb-6" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              {['login', 'register'].map((m) => (
+                <button key={m} onClick={() => { setMode(m); setError('') }}
+                  className="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
+                  style={{
+                    background: mode === m ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    color: mode === m ? 'white' : 'rgba(255,255,255,0.4)',
+                  }}>
+                  {m === 'login' ? 'Sign in' : 'Create account'}
+                </button>
+              ))}
             </div>
 
-            {/* Sidebar */}
             <div className="space-y-4">
-              {job.match_score && (
-                <div className="card p-4">
-                  <p className="label">Match Score</p>
-                  <p className="text-3xl font-bold text-brand-600">{job.match_score}%</p>
-                  <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                    <div className="bg-brand-500 h-2 rounded-full transition-all" style={{ width: `${job.match_score}%` }} />
-                  </div>
-                  {job.match_analysis && <p className="text-xs text-gray-500 mt-2">{job.match_analysis}</p>}
+              {mode === 'register' && (
+                <div>
+                  <label className="label">Full name</label>
+                  <input className="input" name="full_name" placeholder="Jane Doe" value={form.full_name} onChange={handle} />
                 </div>
               )}
-              {job.cover_letter && (
-                <div className="card p-4">
-                  <p className="label mb-2">Cover Letter</p>
-                  <p className="text-xs text-green-600 font-medium">✓ Generated</p>
-                  <button onClick={() => setTab('ai')} className="text-xs text-brand-600 mt-1 hover:underline">View →</button>
-                </div>
-              )}
-              {job.job_url && (
-                <a href={job.job_url} target="_blank" rel="noreferrer"
-                  className="card p-4 flex items-center gap-2 hover:border-brand-500 border border-transparent transition-colors block">
-                  <span className="text-sm text-brand-600 font-medium">View Job Posting ↗</span>
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* AI Tab */}
-        {tab === 'ai' && (
-          <div className="space-y-6">
-            {/* Resume input */}
-            <div className="card p-5">
-              <label className="label">Your Resume Text</label>
-              <p className="text-xs text-gray-400 mb-2">Paste your resume as plain text — used for both AI features below</p>
-              <textarea className="input min-h-40 resize-none font-mono text-xs"
-                placeholder="Paste your resume here…"
-                value={resumeText} onChange={(e) => setResumeText(e.target.value)} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              {/* Cover Letter */}
-              <div className="card p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Cover Letter Generator</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">AI-tailored to this specific JD</p>
-                  </div>
-                  <button onClick={generateCoverLetter} disabled={aiLoading === 'cover'} className="btn-primary text-sm py-1.5">
-                    {aiLoading === 'cover' ? 'Generating…' : '✨ Generate'}
-                  </button>
-                </div>
-                {coverLetter ? (
-                  <div className="mt-3">
-                    <textarea className="input min-h-64 resize-none text-xs font-mono"
-                      value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} />
-                    <button onClick={() => navigator.clipboard.writeText(coverLetter)}
-                      className="btn-secondary text-xs mt-2 py-1">Copy to clipboard</button>
-                  </div>
-                ) : (
-                  <div className="mt-3 min-h-32 flex items-center justify-center text-gray-300 text-sm border-2 border-dashed border-gray-100 rounded-lg">
-                    Cover letter appears here
-                  </div>
-                )}
+              <div>
+                <label className="label">Email</label>
+                <input className="input" name="email" type="email" placeholder="you@email.com" value={form.email} onChange={handle} />
+              </div>
+              <div>
+                <label className="label">Password</label>
+                <input className="input" name="password" type="password" placeholder="••••••••" value={form.password} onChange={handle}
+                  onKeyDown={(e) => e.key === 'Enter' && submit()} />
               </div>
 
-              {/* Match Score */}
-              <div className="card p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Resume Match Scorer</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">See how well you fit this role</p>
-                  </div>
-                  <button onClick={scoreResume} disabled={aiLoading === 'score'} className="btn-primary text-sm py-1.5">
-                    {aiLoading === 'score' ? 'Scoring…' : '✨ Score'}
-                  </button>
+              {error && (
+                <div className="flex items-center gap-2 text-sm px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', color: '#fca5a5' }}>
+                  ⚠️ {error}
                 </div>
-                {matchResult ? (
-                  <div className="space-y-4 mt-3">
-                    <div className="text-center">
-                      <p className="text-5xl font-bold text-brand-600">{matchResult.score}%</p>
-                      <div className="w-full bg-gray-100 rounded-full h-2.5 mt-2">
-                        <div className="bg-brand-500 h-2.5 rounded-full" style={{ width: `${matchResult.score}%` }} />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-600">{matchResult.analysis}</p>
-                    <div>
-                      <p className="text-xs font-semibold text-green-600 mb-1">✓ Strengths</p>
-                      {matchResult.strengths.map((s, i) => (
-                        <p key={i} className="text-xs text-gray-600 mb-0.5">• {s}</p>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-red-500 mb-1">✗ Gaps</p>
-                      {matchResult.gaps.map((g, i) => (
-                        <p key={i} className="text-xs text-gray-600 mb-0.5">• {g}</p>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-3 min-h-32 flex items-center justify-center text-gray-300 text-sm border-2 border-dashed border-gray-100 rounded-lg">
-                    Match results appear here
-                  </div>
-                )}
-              </div>
+              )}
+
+              <button onClick={submit} disabled={loading}
+                className="w-full py-3 text-sm font-bold text-white rounded-xl transition-all disabled:opacity-50 mt-2 hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                {loading ? 'Please wait…' : mode === 'login' ? 'Sign in →' : 'Create account →'}
+              </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
