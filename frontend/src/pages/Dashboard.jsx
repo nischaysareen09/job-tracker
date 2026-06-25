@@ -61,17 +61,17 @@ function JobCard({ job, index }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => !snapshot.isDragging && navigate(`/jobs/${job.id}`)}
-          className="rounded-xl p-3.5 cursor-pointer select-none transition-all duration-150"
+          className="rounded-xl p-3.5 cursor-pointer select-none"
           style={{
             ...provided.draggableProps.style,
             background: snapshot.isDragging
               ? 'rgba(255,255,255,0.12)'
               : 'rgba(255,255,255,0.05)',
             border: `1px solid ${snapshot.isDragging ? cfg.accent + '80' : cfg.border}`,
-            boxShadow: snapshot.isDragging ? cfg.glow + ', 0 20px 40px rgba(0,0,0,0.5)' : 'none',
-            transform: snapshot.isDragging
-              ? `${provided.draggableProps.style?.transform} rotate(2deg) scale(1.03)`
-              : provided.draggableProps.style?.transform,
+            boxShadow: snapshot.isDragging
+              ? cfg.glow + ', 0 20px 40px rgba(0,0,0,0.5)'
+              : 'none',
+            opacity: snapshot.isDragging ? 0.95 : 1,
           }}
         >
           <div className="flex items-start justify-between gap-2 mb-2">
@@ -145,7 +145,7 @@ export default function Dashboard() {
     if (destination.droppableId === source.droppableId && destination.index === source.index) return
 
     const newStatus = destination.droppableId
-    const prevJobs = [...jobs] // snapshot for rollback
+    const prevJobs = [...jobs]
 
     setJobs((prev) =>
       prev.map((j) =>
@@ -156,7 +156,7 @@ export default function Dashboard() {
     try {
       await api.patch(`/applications/${draggableId}`, { status: newStatus })
     } catch {
-      setJobs(prevJobs) // rollback to snapshot
+      setJobs(prevJobs)
     }
   }
 
