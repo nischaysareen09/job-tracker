@@ -60,15 +60,18 @@ function JobCard({ job, index }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          onClick={() => navigate(`/jobs/${job.id}`)}
+          onClick={() => !snapshot.isDragging && navigate(`/jobs/${job.id}`)}
           className="rounded-xl p-3.5 cursor-pointer select-none transition-all duration-150"
           style={{
+            ...provided.draggableProps.style,
             background: snapshot.isDragging
               ? 'rgba(255,255,255,0.12)'
               : 'rgba(255,255,255,0.05)',
             border: `1px solid ${snapshot.isDragging ? cfg.accent + '80' : cfg.border}`,
             boxShadow: snapshot.isDragging ? cfg.glow + ', 0 20px 40px rgba(0,0,0,0.5)' : 'none',
-            transform: snapshot.isDragging ? 'rotate(2deg) scale(1.03)' : 'none',
+            transform: snapshot.isDragging
+              ? `${provided.draggableProps.style?.transform} rotate(2deg) scale(1.03)`
+              : provided.draggableProps.style?.transform,
           }}
         >
           <div className="flex items-start justify-between gap-2 mb-2">
@@ -137,29 +140,25 @@ export default function Dashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-const onDragEnd = async ({ destination, source, draggableId }) => {
-  if (!destination) return
-  if (
-    destination.droppableId === source.droppableId &&
-    destination.index === source.index
-  ) return
+  const onDragEnd = async ({ destination, source, draggableId }) => {
+    if (!destination) return
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return
 
-  const newStatus = destination.droppableId
-  const prevJobs = jobs // snapshot for rollback
+    const newStatus = destination.droppableId
+    const prevJobs = [...jobs] // snapshot for rollback
 
-  // Optimistic update
-  setJobs((prev) =>
-    prev.map((j) =>
-      String(j.id) === String(draggableId) ? { ...j, status: newStatus } : j
+    setJobs((prev) =>
+      prev.map((j) =>
+        String(j.id) === String(draggableId) ? { ...j, status: newStatus } : j
+      )
     )
-  )
 
-  try {
-    await api.patch(`/applications/${draggableId}`, { status: newStatus })
-  } catch {
-    setJobs(prevJobs) // rollback to snapshot, not stale closure
+    try {
+      await api.patch(`/applications/${draggableId}`, { status: newStatus })
+    } catch {
+      setJobs(prevJobs) // rollback to snapshot
+    }
   }
-}
 
   const byStatus = (s) => jobs.filter((j) => j.status === s)
 
@@ -264,14 +263,13 @@ const onDragEnd = async ({ destination, source, draggableId }) => {
 
         {/* Kanban */}
         {view === 'kanban' && (
-          <DragDropContext onDragEnd={onDragEnd} onDragStart={() => {}}>
+          <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-6">
               {STATUSES.map((status) => {
                 const cfg = STATUS_CONFIG[status]
                 const count = byStatus(status).length
                 return (
                   <div key={status} className="flex-shrink-0 w-[260px]">
-                    {/* Column */}
                     <div className="rounded-2xl overflow-hidden" style={{ background: cfg.gradient, border: `1px solid ${cfg.border}`, boxShadow: cfg.glow }}>
                       {/* Column header */}
                       <div className="px-4 py-3 flex items-center justify-between" style={{ background: cfg.header, borderBottom: `1px solid ${cfg.border}` }}>
