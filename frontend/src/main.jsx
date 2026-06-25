@@ -13,15 +13,15 @@ function PrivateRoute({ children }) {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-        <Route path="/add" element={<PrivateRoute><AddJob /></PrivateRoute>} />
-        <Route path="/jobs/:id" element={<PrivateRoute><JobDetail /></PrivateRoute>} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      <Route path="/add" element={<PrivateRoute><AddJob /></PrivateRoute>} />
+      <Route path="/jobs/:id" element={<PrivateRoute><JobDetail /></PrivateRoute>} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  </BrowserRouter>
+  
+</React.StrictMode>
 )
