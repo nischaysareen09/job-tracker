@@ -137,14 +137,29 @@ export default function Dashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  const onDragEnd = async ({ destination, source, draggableId }) => {
-    if (!destination) return
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return
-    const newStatus = destination.droppableId
-    setJobs((prev) => prev.map((j) => String(j.id) === draggableId ? { ...j, status: newStatus } : j))
-    try { await api.patch(`/applications/${draggableId}`, { status: newStatus }) }
-    catch { setJobs((prev) => prev.map((j) => String(j.id) === draggableId ? { ...j, status: source.droppableId } : j)) }
+const onDragEnd = async ({ destination, source, draggableId }) => {
+  if (!destination) return
+  if (
+    destination.droppableId === source.droppableId &&
+    destination.index === source.index
+  ) return
+
+  const newStatus = destination.droppableId
+  const prevJobs = jobs // snapshot for rollback
+
+  // Optimistic update
+  setJobs((prev) =>
+    prev.map((j) =>
+      String(j.id) === String(draggableId) ? { ...j, status: newStatus } : j
+    )
+  )
+
+  try {
+    await api.patch(`/applications/${draggableId}`, { status: newStatus })
+  } catch {
+    setJobs(prevJobs) // rollback to snapshot, not stale closure
   }
+}
 
   const byStatus = (s) => jobs.filter((j) => j.status === s)
 
@@ -249,7 +264,7 @@ export default function Dashboard() {
 
         {/* Kanban */}
         {view === 'kanban' && (
-          <DragDropContext onDragEnd={onDragEnd}>
+          <DragDropContext onDragEnd={onDragEnd} onDragStart={() => {}}>
             <div className="flex gap-4 overflow-x-auto pb-6">
               {STATUSES.map((status) => {
                 const cfg = STATUS_CONFIG[status]
@@ -270,7 +285,7 @@ export default function Dashboard() {
                         </span>
                       </div>
 
-                      <Droppable droppableId={status}>
+                      <Droppable droppableId={status} type="JOB">
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
