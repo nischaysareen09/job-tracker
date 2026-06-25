@@ -22,6 +22,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   </BrowserRouter>
-  
-</React.StrictMode>
 )
