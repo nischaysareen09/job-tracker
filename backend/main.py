@@ -67,14 +67,14 @@ def create_application(payload: schemas.JobApplicationCreate, db: Session = Depe
     return app_obj
 
 @app.get("/applications/{app_id}", response_model=schemas.JobApplicationOut)
-def get_application(app_id: int, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+def get_application(app_id: str, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
     if not app_obj:
         raise HTTPException(status_code=404, detail="Not found")
     return app_obj
 
 @app.patch("/applications/{app_id}", response_model=schemas.JobApplicationOut)
-def update_application(app_id: int, payload: schemas.JobApplicationUpdate, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+def update_application(app_id: str, payload: schemas.JobApplicationUpdate, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
     if not app_obj:
         raise HTTPException(status_code=404, detail="Not found")
@@ -84,7 +84,7 @@ def update_application(app_id: int, payload: schemas.JobApplicationUpdate, db: S
     return app_obj
 
 @app.delete("/applications/{app_id}", status_code=204)
-def delete_application(app_id: int, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+def delete_application(app_id: str, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
     if not app_obj:
         raise HTTPException(status_code=404, detail="Not found")
@@ -206,7 +206,7 @@ def generate_followup_email(payload: dict, current_user: User = Depends(auth.get
     )
 
 @app.post("/applications/{app_id}/generate-cover-letter")
-def generate_and_save_cover_letter(app_id: int, payload: schemas.CoverLetterRequest, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+def generate_and_save_cover_letter(app_id: str, payload: schemas.CoverLetterRequest, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
     if not app_obj:
         raise HTTPException(status_code=404, detail="Not found")
@@ -216,7 +216,7 @@ def generate_and_save_cover_letter(app_id: int, payload: schemas.CoverLetterRequ
     return {"cover_letter": cover_letter}
 
 @app.post("/applications/{app_id}/score-resume")
-def score_and_save_match(app_id: int, payload: schemas.MatchScoreRequest, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+def score_and_save_match(app_id: str, payload: schemas.MatchScoreRequest, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
     if not app_obj:
         raise HTTPException(status_code=404, detail="Not found")
