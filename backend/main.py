@@ -41,14 +41,14 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
         hashed_password=auth.hash_password(payload.password),
     )
     db.add(user); db.commit(); db.refresh(user)
-    return {"access_token": auth.create_token({"sub": str(user.id)}), "token_type": "bearer"}
+    return {"access_token": auth.create_access_token(str(user.id)), "token_type": "bearer"}
 
 @app.post("/auth/login", response_model=schemas.Token)
 def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not auth.verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"access_token": auth.create_token({"sub": str(user.id)}), "token_type": "bearer"}
+    return {"access_token": auth.create_access_token(str(user.id)), "token_type": "bearer"}
 
 @app.get("/auth/me", response_model=schemas.UserOut)
 def get_me(current_user: User = Depends(auth.get_current_user)):
