@@ -14,8 +14,13 @@ export default function Analytics() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    Promise.all([api.get('/analytics'), api.get('/analytics/detailed')])
-      .then(([b, d]) => { setBasic(b.data); setDetailed(d.data) })
+    api.get('/analytics')
+      .then(b => setBasic(b.data))
+      .catch(console.error)
+
+    api.get('/analytics/detailed')
+      .then(d => setDetailed(d.data))
+      .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
 
@@ -45,7 +50,7 @@ export default function Analytics() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total Applied', value: basic?.total || 0, accent: '#818cf8', icon: '📋' },
-            { label: 'Response Rate', value: `${detailed?.response_rate || 0}%`, accent: '#34d399', icon: '📬' },
+            { label: 'Response Rate', value: `${detailed?.response_rate ?? basic?.offer_rate ?? 0}%`, accent: '#34d399', icon: '📬' },
             { label: 'Avg Days to Response', value: detailed?.avg_days_to_response ? `${detailed.avg_days_to_response}d` : '—', accent: '#fbbf24', icon: '⏱️' },
             { label: 'Follow-ups Needed', value: detailed?.followup_needed?.length || 0, accent: '#f87171', icon: '⚠️' },
           ].map(({ label, value, accent, icon }) => (
@@ -62,20 +67,24 @@ export default function Analytics() {
 
         {/* Charts row */}
         <div className="grid grid-cols-2 gap-6">
-          {/* Status bar chart */}
           <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <h3 className="font-bold text-white text-sm mb-4">Applications by Stage</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={statusData} barSize={36}>
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
-                <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#1a1a1a', color: 'white', fontSize: '12px' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                <Bar dataKey="count" radius={[8,8,0,0]}>{statusData.map((e,i) => <Cell key={i} fill={e.color} />)}</Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {statusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={statusData} barSize={36}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#1a1a1a', color: 'white', fontSize: '12px' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                  <Bar dataKey="count" radius={[8,8,0,0]}>{statusData.map((e,i) => <Cell key={i} fill={e.color} />)}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-48">
+                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.2)' }}>No data yet</p>
+              </div>
+            )}
           </div>
 
-          {/* Pie chart */}
           <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <h3 className="font-bold text-white text-sm mb-4">Pipeline Distribution</h3>
             {pieData.length > 0 ? (
@@ -95,6 +104,22 @@ export default function Analytics() {
             )}
           </div>
         </div>
+
+        {/* Offer & Interview rates */}
+        {basic && (
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: 'Interview Rate', value: `${basic.interview_rate || 0}%`, accent: '#fbbf24' },
+              { label: 'Offer Rate', value: `${basic.offer_rate || 0}%`, accent: '#34d399' },
+              { label: 'Avg Match Score', value: basic.avg_match_score ? `${basic.avg_match_score}%` : '—', accent: '#818cf8' },
+            ].map(({ label, value, accent }) => (
+              <div key={label} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p className="text-2xl font-bold" style={{ color: accent }}>{value}</p>
+                <p className="text-[11px] mt-1 uppercase tracking-widest font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Activity timeline */}
         {heatmapData.length > 0 && (
@@ -139,7 +164,7 @@ export default function Analytics() {
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <button onClick={() => navigate(`/jobs/${f.id}?tab=followup`)}
+                      <button onClick={() => navigate(`/jobs/${f.id}`)}
                         className="text-xs font-semibold px-3 py-1 rounded-lg"
                         style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>
                         Follow up →
@@ -149,6 +174,19 @@ export default function Analytics() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!basic && !detailed && (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <p className="text-4xl">📊</p>
+            <p className="font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>No analytics data yet</p>
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.2)' }}>Add some job applications to see your stats</p>
+            <button onClick={() => navigate('/')} className="mt-2 text-sm font-semibold px-4 py-2 rounded-lg"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+              Go to Dashboard
+            </button>
           </div>
         )}
       </div>
