@@ -41,14 +41,14 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
         hashed_password=auth.hash_password(payload.password),
     )
     db.add(user); db.commit(); db.refresh(user)
-    return {"access_token": auth.create_token({"sub": str(user.id)}), "token_type": "bearer"}
+    return {"access_token": auth.create_access_token(str(user.id)), "token_type": "bearer"}
 
 @app.post("/auth/login", response_model=schemas.Token)
 def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not auth.verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"access_token": auth.create_token({"sub": str(user.id)}), "token_type": "bearer"}
+    return {"access_token": auth.create_access_token(str(user.id)), "token_type": "bearer"}
 
 @app.get("/auth/me", response_model=schemas.UserOut)
 def get_me(current_user: User = Depends(auth.get_current_user)):
@@ -67,14 +67,14 @@ def create_application(payload: schemas.JobApplicationCreate, db: Session = Depe
     return app_obj
 
 @app.get("/applications/{app_id}", response_model=schemas.JobApplicationOut)
-def get_application(app_id: int, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+def get_application(app_id: str, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
     if not app_obj:
         raise HTTPException(status_code=404, detail="Not found")
     return app_obj
 
 @app.patch("/applications/{app_id}", response_model=schemas.JobApplicationOut)
-def update_application(app_id: int, payload: schemas.JobApplicationUpdate, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+def update_application(app_id: str, payload: schemas.JobApplicationUpdate, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
     if not app_obj:
         raise HTTPException(status_code=404, detail="Not found")
@@ -84,7 +84,7 @@ def update_application(app_id: int, payload: schemas.JobApplicationUpdate, db: S
     return app_obj
 
 @app.delete("/applications/{app_id}", status_code=204)
-def delete_application(app_id: int, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+def delete_application(app_id: str, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
     if not app_obj:
         raise HTTPException(status_code=404, detail="Not found")
@@ -115,46 +115,40 @@ def get_detailed_analytics(db: Session = Depends(get_db), current_user: User = D
     apps = db.query(JobApplication).filter(JobApplication.user_id == current_user.id).all()
     today = datetime.utcnow().date()
 
-    # Follow-up needed
     followup_needed = []
     for a in apps:
         if a.status == "Applied" and a.applied_date:
             days = (today - a.applied_date).days
             if days >= 7:
                 followup_needed.append({
-                    "id": a.id,
+                    "id": str(a.id),
                     "company": a.company,
                     "role": a.role,
                     "days_since_applied": days,
                     "urgency": "high" if days >= 14 else "medium"
                 })
 
-    # Salary data
     salary_data = []
     for a in apps:
         if a.salary_range:
             salary_data.append({"company": a.company, "salary_range": a.salary_range, "status": a.status})
 
-    # Heatmap (last 90 days)
     heatmap = {}
     for a in apps:
         if a.applied_date:
             key = str(a.applied_date)
             heatmap[key] = heatmap.get(key, 0) + 1
 
-    # Response rate
     total = len(apps)
     responded = len([a for a in apps if a.status in ["Interviewing", "Offer", "Rejected"]])
     response_rate = round(responded / total * 100, 1) if total > 0 else 0
 
-    # Avg days to response
     days_list = []
     for a in apps:
         if a.applied_date and a.status in ["Interviewing", "Offer"]:
             days_list.append((today - a.applied_date).days)
     avg_days = round(sum(days_list) / len(days_list), 1) if days_list else 0
 
-    # Weekly activity (last 8 weeks)
     weekly = {}
     for a in apps:
         if a.applied_date:
@@ -205,37 +199,13 @@ def generate_followup_email(payload: dict, current_user: User = Depends(auth.get
         recruiter_name=payload.get("recruiter_name", ""),
     )
 
-@app.post("/applications/{app_id}/generate-cover-letter")
-def generate_and_save_cover_letter(app_id: int, payload: schemas.CoverLetterRequest, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
-    app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
-    if not app_obj:
-        raise HTTPException(status_code=404, detail="Not found")
-    cover_letter = ai_service.generate_cover_letter(payload.job_description, payload.resume_text, payload.company, payload.role)
-    app_obj.cover_letter = cover_letter
-    db.commit()
-    return {"cover_letter": cover_letter}
-
-@app.post("/applications/{app_id}/score-resume")
-def score_and_save_match(app_id: int, payload: schemas.MatchScoreRequest, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
-    app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
-    if not app_obj:
-        raise HTTPException(status_code=404, detail="Not found")
-    result = ai_service.score_resume_match(payload.job_description, payload.resume_text)
-    app_obj.match_score = result["score"]
-    app_obj.match_analysis = result["analysis"]
-    db.commit()
-    return result
-
 @app.post("/ai/agent")
 def agent_chat(payload: dict, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
     user_message = payload.get("message", "")
     conversation_history = payload.get("history", [])
-    
-    # Get all user applications with full details
-    apps = db.query(JobApplication).filter(
-        JobApplication.user_id == current_user.id
-    ).all()
-    
+
+    apps = db.query(JobApplication).filter(JobApplication.user_id == current_user.id).all()
+
     apps_data = []
     for a in apps:
         apps_data.append({
@@ -253,6 +223,27 @@ def agent_chat(payload: dict, db: Session = Depends(get_db), current_user: User 
             "applied_date": str(a.applied_date) if a.applied_date else None,
             "job_url": a.job_url,
         })
-    
+
     result = ai_service.run_agent(user_message, apps_data, conversation_history)
+    return result
+
+@app.post("/applications/{app_id}/generate-cover-letter")
+def generate_and_save_cover_letter(app_id: str, payload: schemas.CoverLetterRequest, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+    app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
+    if not app_obj:
+        raise HTTPException(status_code=404, detail="Not found")
+    cover_letter = ai_service.generate_cover_letter(payload.job_description, payload.resume_text, payload.company, payload.role)
+    app_obj.cover_letter = cover_letter
+    db.commit()
+    return {"cover_letter": cover_letter}
+
+@app.post("/applications/{app_id}/score-resume")
+def score_and_save_match(app_id: str, payload: schemas.MatchScoreRequest, db: Session = Depends(get_db), current_user: User = Depends(auth.get_current_user)):
+    app_obj = db.query(JobApplication).filter(JobApplication.id == app_id, JobApplication.user_id == current_user.id).first()
+    if not app_obj:
+        raise HTTPException(status_code=404, detail="Not found")
+    result = ai_service.score_resume_match(payload.job_description, payload.resume_text)
+    app_obj.match_score = result["score"]
+    app_obj.match_analysis = result["analysis"]
+    db.commit()
     return result
