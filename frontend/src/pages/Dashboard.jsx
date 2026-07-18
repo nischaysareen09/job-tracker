@@ -209,11 +209,12 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <button onClick={() => navigate('/add')}
-            className="text-sm font-bold text-white px-4 py-1.5 rounded-lg"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             + Add Job
-          </button>
+            <button onClick={() => navigate('/agent')}
+            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
+            style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
+              🤖 JobBot
+              </button>
           <button onClick={logout} className="text-xs px-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Sign out</button>
         </div>
       </nav>
