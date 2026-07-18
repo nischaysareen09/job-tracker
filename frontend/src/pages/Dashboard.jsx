@@ -191,35 +191,38 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/analytics")}
+          <button onClick={() => setShowChart(!showChart)}
             className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
             style={{
               background: showChart ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
               color: showChart ? '#818cf8' : 'rgba(255,255,255,0.45)',
               border: `1px solid ${showChart ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)'}`,
-            }}>
+         }}>
             📊 Analytics
           </button>
-          <div className="flex rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            {['kanban','list'].map(v => (
-              <button key={v} onClick={() => setView(v)}
-                className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all"
-                style={{ background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === v ? 'white' : 'rgba(255,255,255,0.4)' }}>
-                {v === 'kanban' ? '⊞ Board' : '☰ List'}
-              </button>
-            ))}
+            <div className="flex rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {['kanban','list'].map(v => (
+                <button key={v} onClick={() => setView(v)}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all"
+                  style={{ background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === v ? 'white' : 'rgba(255,255,255,0.4)' }}>
+                  {v === 'kanban' ? '⊞ Board' : '☰ List'}
+                </button>
+             ))}
           </div>
+          <button onClick={() => navigate('/add')}
+            className="text-sm font-bold text-white px-4 py-1.5 rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             + Add Job
-            <button onClick={() => navigate('/agent')}
+          </button>
+          <button onClick={() => navigate('/agent')}
             className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
             style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
-              🤖 JobBot
-              </button>
-          <button onClick={logout} className="text-xs px-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Sign out</button>
-        </div>
-      </nav>
+            🐝 BunnyBee
+          </button>
+  <button onClick={logout} className="text-xs px-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Sign out</button>
+</div>
 
-      <div className="p-6 max-w-[1500px] mx-auto">
+      </nav><div className="p-6 max-w-[1500px] mx-auto">
         {analytics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <StatCard icon="📋" label="Total Applied" value={analytics.total} accent="#818cf8" />
