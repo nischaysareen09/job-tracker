@@ -6,67 +6,108 @@ import api from '../api'
 const STATUSES = ['Saved', 'Applied', 'Interviewing', 'Offer', 'Rejected']
 
 const STATUS_CONFIG = {
-  Saved:        { gradient: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)', accent: '#94a3b8', glow: 'rgba(148,163,184,0.15)', badge: 'rgba(148,163,184,0.15)', badgeText: '#cbd5e1', border: 'rgba(148,163,184,0.2)', header: 'rgba(148,163,184,0.07)' },
-  Applied:      { gradient: 'linear-gradient(160deg, #1e1b4b 0%, #0d0b2e 100%)', accent: '#818cf8', glow: 'rgba(129,140,248,0.2)',  badge: 'rgba(129,140,248,0.15)', badgeText: '#a5b4fc', border: 'rgba(129,140,248,0.25)', header: 'rgba(129,140,248,0.07)' },
-  Interviewing: { gradient: 'linear-gradient(160deg, #1c1400 0%, #0d0a00 100%)', accent: '#fbbf24', glow: 'rgba(251,191,36,0.2)',   badge: 'rgba(251,191,36,0.15)',  badgeText: '#fcd34d', border: 'rgba(251,191,36,0.25)',  header: 'rgba(251,191,36,0.07)'  },
-  Offer:        { gradient: 'linear-gradient(160deg, #022c1e 0%, #011a12 100%)', accent: '#34d399', glow: 'rgba(52,211,153,0.2)',   badge: 'rgba(52,211,153,0.15)',  badgeText: '#6ee7b7', border: 'rgba(52,211,153,0.25)',  header: 'rgba(52,211,153,0.07)'  },
-  Rejected:     { gradient: 'linear-gradient(160deg, #2d0000 0%, #1a0000 100%)', accent: '#f87171', glow: 'rgba(248,113,113,0.2)',  badge: 'rgba(248,113,113,0.15)', badgeText: '#fca5a5', border: 'rgba(248,113,113,0.25)', header: 'rgba(248,113,113,0.07)' },
+  Saved:        { gradient: 'linear-gradient(160deg, #1e293b, #0f172a)', accent: '#94a3b8', glow: 'rgba(148,163,184,0.12)', badge: 'rgba(148,163,184,0.12)', badgeText: '#cbd5e1', border: 'rgba(148,163,184,0.18)', dot: '#94a3b8' },
+  Applied:      { gradient: 'linear-gradient(160deg, #1e1b4b, #0d0b2e)', accent: '#00f5ff', glow: 'rgba(0,245,255,0.15)', badge: 'rgba(0,245,255,0.1)', badgeText: '#00f5ff', border: 'rgba(0,245,255,0.2)', dot: '#00f5ff' },
+  Interviewing: { gradient: 'linear-gradient(160deg, #1c1400, #0d0a00)', accent: '#ffb800', glow: 'rgba(255,184,0,0.15)', badge: 'rgba(255,184,0,0.1)', badgeText: '#ffb800', border: 'rgba(255,184,0,0.2)', dot: '#ffb800' },
+  Offer:        { gradient: 'linear-gradient(160deg, #022c1e, #011a12)', accent: '#00ff88', glow: 'rgba(0,255,136,0.15)', badge: 'rgba(0,255,136,0.1)', badgeText: '#00ff88', border: 'rgba(0,255,136,0.2)', dot: '#00ff88' },
+  Rejected:     { gradient: 'linear-gradient(160deg, #2d0000, #1a0000)', accent: '#ff3d5a', glow: 'rgba(255,61,90,0.15)', badge: 'rgba(255,61,90,0.1)', badgeText: '#ff3d5a', border: 'rgba(255,61,90,0.2)', dot: '#ff3d5a' },
+}
+
+// Animated counter
+function Counter({ value, suffix = '' }) {
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    let start = 0
+    const end = parseInt(value) || 0
+    if (end === 0) { setDisplay(0); return }
+    const step = Math.ceil(end / 30)
+    const timer = setInterval(() => {
+      start += step
+      if (start >= end) { setDisplay(end); clearInterval(timer) }
+      else setDisplay(start)
+    }, 30)
+    return () => clearInterval(timer)
+  }, [value])
+  return <span>{display}{suffix}</span>
+}
+
+// Floating grid background
+function GridBackground() {
+  return (
+    <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: `linear-gradient(rgba(0,245,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,255,0.02) 1px, transparent 1px)`,
+        backgroundSize: '50px 50px',
+      }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 20% 50%, rgba(0,245,255,0.04) 0%, transparent 50%)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 80% 20%, rgba(255,184,0,0.03) 0%, transparent 50%)' }} />
+    </div>
+  )
 }
 
 function Avatar({ name }) {
-  const colors = ['#818cf8','#34d399','#fbbf24','#f87171','#a78bfa','#38bdf8']
+  const colors = ['#00f5ff', '#ffb800', '#00ff88', '#ff3d5a', '#a78bfa', '#38bdf8']
   const color = colors[name.charCodeAt(0) % colors.length]
   return (
-    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-      style={{ backgroundColor: color + '22', color, border: `1px solid ${color}44` }}>
+    <div style={{
+      width: 32, height: 32, borderRadius: 10,
+      background: color + '18', color, border: `1px solid ${color}44`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 12, fontWeight: 900, flexShrink: 0,
+      boxShadow: `0 0 12px ${color}22`,
+    }}>
       {name[0].toUpperCase()}
     </div>
   )
 }
 
-function JobCard({ job, onDragStart, onClick }) {
+function JobCard({ job, onClick }) {
   const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.Applied
+  const [hovered, setHovered] = useState(false)
   return (
     <div
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('jobId', String(job.id))
         e.dataTransfer.setData('fromStatus', job.status)
-        onDragStart && onDragStart()
       }}
       onClick={() => onClick(job.id)}
-      className="rounded-xl p-3.5 cursor-grab active:cursor-grabbing select-none"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: 'rgba(255,255,255,0.05)',
-        border: `1px solid ${cfg.border}`,
-        transition: 'all 0.15s ease',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)' }}
-    >
-      <div className="flex items-start justify-between gap-2 mb-2">
+        borderRadius: 14, padding: '14px', cursor: 'grab',
+        background: hovered ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.04)',
+        border: `1px solid ${hovered ? cfg.accent + '40' : cfg.border}`,
+        boxShadow: hovered ? `0 8px 32px rgba(0,0,0,0.3), 0 0 20px ${cfg.glow}` : '0 2px 8px rgba(0,0,0,0.2)',
+        transform: hovered ? 'translateY(-2px) scale(1.01)' : 'none',
+        transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+        userSelect: 'none',
+      }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
         <Avatar name={job.company} />
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-          style={{ backgroundColor: cfg.badge, color: cfg.badgeText }}>
-          {job.status}
-        </span>
+        <span style={{
+          fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 20, fontFamily: 'monospace',
+          background: cfg.badge, color: cfg.badgeText, letterSpacing: '0.1em',
+          boxShadow: `0 0 8px ${cfg.glow}`,
+        }}>{job.status.toUpperCase()}</span>
       </div>
-      <p className="font-semibold text-sm text-white">{job.company}</p>
-      <p className="text-xs mt-0.5 truncate" style={{ color: cfg.accent + 'bb' }}>{job.role}</p>
-      {job.location && <p className="text-[10px] mt-2" style={{ color: 'rgba(255,255,255,0.3)' }}>📍 {job.location}</p>}
+      <p style={{ color: 'white', fontWeight: 700, fontSize: 13, margin: 0 }}>{job.company}</p>
+      <p style={{ color: cfg.accent + 'aa', fontSize: 11, margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.role}</p>
+      {job.location && <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10, marginTop: 6 }}>📍 {job.location}</p>}
       {job.match_score && (
-        <div className="mt-3 pt-2.5" style={{ borderTop: `1px solid ${cfg.border}` }}>
-          <div className="flex justify-between mb-1">
-            <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>MATCH</span>
-            <span className="text-[10px] font-bold" style={{ color: cfg.accent }}>{job.match_score}%</span>
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${cfg.border}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: 'monospace', letterSpacing: '0.1em' }}>MATCH</span>
+            <span style={{ color: cfg.accent, fontSize: 9, fontWeight: 800 }}>{job.match_score}%</span>
           </div>
-          <div className="w-full h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
-            <div className="h-1 rounded-full" style={{ width: `${job.match_score}%`, background: cfg.accent }} />
+          <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: 3, overflow: 'hidden' }}>
+            <div style={{ width: `${job.match_score}%`, height: '100%', background: `linear-gradient(90deg, ${cfg.accent}, ${cfg.accent}88)`, borderRadius: 4, boxShadow: `0 0 6px ${cfg.accent}` }} />
           </div>
         </div>
       )}
       {job.applied_date && (
-        <p className="text-[10px] mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
+        <p style={{ color: 'rgba(255,255,255,0.18)', fontSize: 9, marginTop: 6, fontFamily: 'monospace' }}>
           {new Date(job.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </p>
       )}
@@ -77,44 +118,60 @@ function JobCard({ job, onDragStart, onClick }) {
 function KanbanColumn({ status, jobs, onDrop, onCardClick }) {
   const [isDragOver, setIsDragOver] = useState(false)
   const cfg = STATUS_CONFIG[status]
-
   return (
-    <div className="flex-shrink-0 w-[260px]">
-      <div className="rounded-2xl overflow-hidden"
-        style={{ background: cfg.gradient, border: `1px solid ${cfg.border}`, boxShadow: `0 0 30px ${cfg.glow}` }}>
-        <div className="px-4 py-3 flex items-center justify-between"
-          style={{ background: cfg.header, borderBottom: `1px solid ${cfg.border}` }}>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.accent, boxShadow: `0 0 8px ${cfg.accent}` }} />
-            <span className="text-sm font-bold" style={{ color: cfg.accent }}>{status}</span>
+    <div style={{ flexShrink: 0, width: 264 }}>
+      <div style={{
+        borderRadius: 20, overflow: 'hidden',
+        background: cfg.gradient,
+        border: `1px solid ${isDragOver ? cfg.accent + '60' : cfg.border}`,
+        boxShadow: isDragOver ? `0 0 40px ${cfg.glow}, 0 20px 60px rgba(0,0,0,0.4)` : `0 0 20px ${cfg.glow}, 0 8px 32px rgba(0,0,0,0.3)`,
+        transition: 'all 0.2s ease',
+      }}>
+        {/* Column header */}
+        <div style={{
+          padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: `rgba(${cfg.accent === '#00f5ff' ? '0,245,255' : cfg.accent === '#ffb800' ? '255,184,0' : cfg.accent === '#00ff88' ? '0,255,136' : cfg.accent === '#ff3d5a' ? '255,61,90' : '148,163,184'},0.06)`,
+          borderBottom: `1px solid ${cfg.border}`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, boxShadow: `0 0 8px ${cfg.dot}, 0 0 16px ${cfg.dot}55` }} />
+            <span style={{ color: cfg.accent, fontWeight: 800, fontSize: 12, letterSpacing: '0.08em' }}>{status}</span>
           </div>
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: cfg.badge, color: cfg.badgeText }}>{jobs.length}</span>
+          <span style={{
+            fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 12,
+            background: cfg.badge, color: cfg.badgeText, fontFamily: 'monospace',
+          }}>{jobs.length}</span>
         </div>
 
+        {/* Drop zone */}
         <div
-          className="p-2 space-y-2 min-h-36 transition-all duration-150"
-          style={{ background: isDragOver ? 'rgba(255,255,255,0.05)' : 'transparent' }}
-          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+          style={{
+            padding: 8, display: 'flex', flexDirection: 'column', gap: 8,
+            minHeight: 140,
+            background: isDragOver ? 'rgba(255,255,255,0.03)' : 'transparent',
+            transition: 'background 0.15s',
+          }}
+          onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
           onDragLeave={() => setIsDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault()
-            setIsDragOver(false)
+          onDrop={e => {
+            e.preventDefault(); setIsDragOver(false)
             const jobId = e.dataTransfer.getData('jobId')
             const fromStatus = e.dataTransfer.getData('fromStatus')
             if (fromStatus !== status) onDrop(jobId, status)
-          }}
-        >
-          {jobs.map(job => (
-            <JobCard key={job.id} job={job} onClick={onCardClick} />
-          ))}
+          }}>
+          {jobs.map(job => <JobCard key={job.id} job={job} onClick={onCardClick} />)}
           {jobs.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-10 gap-2"
-              style={{ opacity: isDragOver ? 1 : 0.4 }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ border: `2px dashed ${cfg.border}`, color: cfg.accent }}>+</div>
-              <p className="text-[10px] font-medium" style={{ color: cfg.accent }}>
-                {isDragOver ? 'Drop here!' : 'Drag here'}
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              padding: '32px 16px', gap: 8, opacity: isDragOver ? 1 : 0.35,
+              transition: 'opacity 0.2s',
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, border: `2px dashed ${cfg.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.accent, fontSize: 18,
+              }}>+</div>
+              <p style={{ color: cfg.accent, fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.1em' }}>
+                {isDragOver ? 'DROP HERE' : 'DRAG HERE'}
               </p>
             </div>
           )}
@@ -124,15 +181,33 @@ function KanbanColumn({ status, jobs, onDrop, onCardClick }) {
   )
 }
 
-function StatCard({ icon, label, value, accent }) {
+function StatCard({ icon, label, value, accent, sub }) {
+  const [visible, setVisible] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  useEffect(() => { setTimeout(() => setVisible(true), 100) }, [])
   return (
-    <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-2xl">{icon}</span>
-        <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accent }} />
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        borderRadius: 18, padding: '20px', cursor: 'default',
+        background: hovered ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${hovered ? accent + '30' : 'rgba(255,255,255,0.07)'}`,
+        boxShadow: hovered ? `0 8px 32px rgba(0,0,0,0.3), 0 0 20px ${accent}15` : '0 2px 8px rgba(0,0,0,0.2)',
+        transform: hovered ? 'translateY(-3px)' : 'none',
+        opacity: visible ? 1 : 0,
+        transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+      }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <span style={{ fontSize: 22 }}>{icon}</span>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, boxShadow: `0 0 8px ${accent}`, animation: 'pulse 2s infinite' }} />
       </div>
-      <p className="text-3xl font-bold text-white">{value}</p>
-      <p className="text-[11px] mt-1 uppercase tracking-widest font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</p>
+      <p style={{ color: 'white', fontWeight: 900, fontSize: 32, margin: 0, letterSpacing: '-0.02em' }}>
+        <Counter value={value} />
+        {typeof value === 'string' && value.includes('%') ? '%' : ''}
+      </p>
+      <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.12em', marginTop: 4 }}>{label}</p>
+      {sub && <p style={{ color: accent, fontSize: 10, marginTop: 2, fontFamily: 'monospace' }}>{sub}</p>}
     </div>
   )
 }
@@ -152,121 +227,150 @@ export default function Dashboard() {
   }, [])
 
   const handleDrop = async (jobId, newStatus) => {
-    const prevJobs = [...jobs]
-    setJobs(prev => prev.map(j => String(j.id) === String(jobId) ? { ...j, status: newStatus } : j))
+    const prev = [...jobs]
+    setJobs(p => p.map(j => String(j.id) === String(jobId) ? { ...j, status: newStatus } : j))
     try { await api.patch(`/applications/${jobId}`, { status: newStatus }) }
-    catch { setJobs(prevJobs) }
+    catch { setJobs(prev) }
   }
 
-  const byStatus = (s) => jobs.filter(j => j.status === s)
-
+  const byStatus = s => jobs.filter(j => j.status === s)
   const chartData = STATUSES.map(s => ({ name: s, count: byStatus(s).length, color: STATUS_CONFIG[s].accent }))
-
   const logout = () => { localStorage.removeItem('token'); navigate('/login') }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
-      <div className="text-center">
-        <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>Loading your dashboard…</p>
-      </div>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#02020a', gap: 16 }}>
+      <span style={{ fontSize: 40, animation: 'spin 1s linear infinite', display: 'inline-block', filter: 'drop-shadow(0 0 12px rgba(255,184,0,0.8))' }}>🐝</span>
+      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: 'monospace', letterSpacing: '0.15em' }}>LOADING MISSION CONTROL...</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a0a' }}>
-      <nav className="px-6 py-4 flex items-center justify-between sticky top-0 z-20"
-        style={{ background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+    <div style={{ minHeight: '100vh', background: '#02020a', fontFamily: "'Inter', sans-serif" }}>
+      <GridBackground />
+
+      {/* Navbar */}
+      <nav style={{
+        padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'sticky', top: 0, zIndex: 20,
+        background: 'rgba(2,2,10,0.85)', backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(0,245,255,0.08)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,184,0,0.1)', border: '1px solid rgba(255,184,0,0.3)' }}>
+            <span style={{ fontSize: 18, filter: 'drop-shadow(0 0 6px rgba(255,184,0,0.8))' }}>🐝</span>
           </div>
           <div>
-            <p className="font-bold text-white text-sm">JobTracker</p>
-            <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{jobs.length} applications</p>
+            <p style={{ color: 'white', fontWeight: 900, fontSize: 13, margin: 0, letterSpacing: '0.08em' }}>JOBTRACKER</p>
+            <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: 9, margin: 0, fontFamily: 'monospace', letterSpacing: '0.1em' }}>{jobs.length} APPLICATIONS TRACKED</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowChart(!showChart)}
-            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
-            style={{
-              background: showChart ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
-              color: showChart ? '#818cf8' : 'rgba(255,255,255,0.45)',
-              border: `1px solid ${showChart ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)'}`,
-         }}>
-            📊 Analytics
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Analytics */}
+          <button onClick={() => navigate('/analytics')} style={{
+            padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'monospace',
+            background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)',
+            letterSpacing: '0.08em', transition: 'all 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,245,255,0.08)'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.borderColor = 'rgba(0,245,255,0.25)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}>
+            📊 ANALYTICS
           </button>
-            <div className="flex rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              {['kanban','list'].map(v => (
-                <button key={v} onClick={() => setView(v)}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all"
-                  style={{ background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === v ? 'white' : 'rgba(255,255,255,0.4)' }}>
-                  {v === 'kanban' ? '⊞ Board' : '☰ List'}
-                </button>
-             ))}
-          </div>
-          <button onClick={() => navigate('/add')}
-            className="text-sm font-bold text-white px-4 py-1.5 rounded-lg"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-            + Add Job
-          </button>
-          <button onClick={() => navigate('/agent')}
-            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
-            style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
-            🐝 BunnyBee
-          </button>
-  <button onClick={logout} className="text-xs px-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Sign out</button>
-</div>
 
-      </nav><div className="p-6 max-w-[1500px] mx-auto">
+          {/* View toggle */}
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 3, gap: 2 }}>
+            {['kanban', 'list'].map(v => (
+              <button key={v} onClick={() => setView(v)} style={{
+                padding: '5px 12px', borderRadius: 7, fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'monospace',
+                background: view === v ? 'rgba(0,245,255,0.12)' : 'transparent',
+                color: view === v ? '#00f5ff' : 'rgba(255,255,255,0.35)',
+                border: view === v ? '1px solid rgba(0,245,255,0.2)' : '1px solid transparent',
+                letterSpacing: '0.08em', transition: 'all 0.15s',
+              }}>
+                {v === 'kanban' ? '⊞ BOARD' : '☰ LIST'}
+              </button>
+            ))}
+          </div>
+
+          {/* Add Job */}
+          <button onClick={() => navigate('/add')} style={{
+            padding: '7px 16px', borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: 'pointer',
+            background: 'linear-gradient(135deg, #00f5ff, #ffb800)', color: '#02020a',
+            border: 'none', letterSpacing: '0.08em', fontFamily: 'monospace',
+            boxShadow: '0 0 20px rgba(0,245,255,0.2)', transition: 'all 0.2s',
+          }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 40px rgba(0,245,255,0.4), 0 4px 16px rgba(0,0,0,0.3)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 0 20px rgba(0,245,255,0.2)'}>
+            + ADD JOB
+          </button>
+
+          {/* BunnyBee */}
+          <button onClick={() => navigate('/agent')} style={{
+            padding: '7px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'monospace',
+            background: 'rgba(255,184,0,0.1)', color: '#ffb800',
+            border: '1px solid rgba(255,184,0,0.25)', letterSpacing: '0.08em', transition: 'all 0.2s',
+            boxShadow: '0 0 12px rgba(255,184,0,0.1)',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,184,0,0.18)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(255,184,0,0.25)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,184,0,0.1)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(255,184,0,0.1)' }}>
+            🐝 BUNNYBEE
+          </button>
+
+          <button onClick={logout} style={{ padding: '6px 10px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)', fontSize: 11, cursor: 'pointer', fontFamily: 'monospace', transition: 'color 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#ff3d5a'}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.25)'}>
+            EXIT
+          </button>
+        </div>
+      </nav>
+
+      <div style={{ padding: '24px', maxWidth: 1500, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        {/* Stats */}
         {analytics && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <StatCard icon="📋" label="Total Applied" value={analytics.total} accent="#818cf8" />
-            <StatCard icon="🎯" label="Interviews" value={analytics.by_status?.Interviewing || 0} accent="#fbbf24" />
-            <StatCard icon="🏆" label="Offers" value={analytics.by_status?.Offer || 0} accent="#34d399" />
-            <StatCard icon="⚡" label="Avg Match" value={analytics.avg_match_score ? `${analytics.avg_match_score}%` : '—'} accent="#f87171" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+            <StatCard icon="📋" label="TOTAL APPLIED" value={analytics.total} accent="#00f5ff" />
+            <StatCard icon="🎯" label="INTERVIEWS" value={analytics.by_status?.Interviewing || 0} accent="#ffb800" sub={`${analytics.interview_rate || 0}% rate`} />
+            <StatCard icon="🏆" label="OFFERS" value={analytics.by_status?.Offer || 0} accent="#00ff88" sub={`${analytics.offer_rate || 0}% rate`} />
+            <StatCard icon="⚡" label="AVG MATCH" value={analytics.avg_match_score ? Math.round(analytics.avg_match_score) : 0} accent="#ff3d5a" sub={analytics.avg_match_score ? `${Math.round(analytics.avg_match_score)}% avg` : 'No scores yet'} />
           </div>
         )}
 
-        {showChart && (
-          <div className="rounded-2xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <h3 className="font-bold text-white text-sm mb-4">Application Pipeline</h3>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData} barSize={44}>
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
-                <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#1a1a1a', color: 'white', fontSize: '12px' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                <Bar dataKey="count" radius={[8,8,0,0]}>{chartData.map((e,i) => <Cell key={i} fill={e.color} />)}</Bar>
+        {/* Chart toggle */}
+        {showChart && analytics && (
+          <div style={{ borderRadius: 20, padding: '20px 24px', marginBottom: 24, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p style={{ color: 'white', fontWeight: 800, fontSize: 13, marginBottom: 16, fontFamily: 'monospace', letterSpacing: '0.08em' }}>APPLICATION PIPELINE</p>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={chartData} barSize={40}>
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.25)' }} axisLine={false} tickLine={false} allowDecimals={false} width={20} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: '#0a0a14', color: 'white', fontSize: 12, fontFamily: 'monospace' }} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
+                <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                  {chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         )}
 
+        {/* Kanban */}
         {view === 'kanban' && (
-          <div className="flex gap-4 overflow-x-auto pb-6">
+          <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 24 }}>
             {STATUSES.map(status => (
-              <KanbanColumn
-                key={status}
-                status={status}
-                jobs={byStatus(status)}
-                onDrop={handleDrop}
-                onCardClick={(id) => navigate(`/jobs/${id}`)}
-              />
+              <KanbanColumn key={status} status={status} jobs={byStatus(status)}
+                onDrop={handleDrop} onCardClick={id => navigate(`/jobs/${id}`)} />
             ))}
           </div>
         )}
 
+        {/* List view */}
         {view === 'list' && (
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <table className="w-full text-sm">
+          <div style={{ borderRadius: 20, overflow: 'hidden', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Company','Role','Status','Location','Match','Date'].map(h => (
-                    <th key={h} className="text-left px-5 py-4 text-[11px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>{h}</th>
+                  {['Company', 'Role', 'Status', 'Location', 'Match', 'Date'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '14px 20px', color: 'rgba(255,255,255,0.25)', fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.12em', fontWeight: 700 }}>{h.toUpperCase()}</th>
                   ))}
                 </tr>
               </thead>
@@ -275,24 +379,31 @@ export default function Dashboard() {
                   const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.Applied
                   return (
                     <tr key={job.id} onClick={() => navigate(`/jobs/${job.id}`)}
-                      className="cursor-pointer transition-colors"
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                      <td className="px-5 py-4"><div className="flex items-center gap-3"><Avatar name={job.company} /><span className="font-semibold text-white">{job.company}</span></div></td>
-                      <td className="px-5 py-4 text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{job.role}</td>
-                      <td className="px-5 py-4"><span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: cfg.badge, color: cfg.badgeText }}>{job.status}</span></td>
-                      <td className="px-5 py-4 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{job.location || '—'}</td>
-                      <td className="px-5 py-4">{job.match_score ? <span className="font-bold" style={{ color: cfg.accent }}>{job.match_score}%</span> : <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}</td>
-                      <td className="px-5 py-4 text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{job.applied_date ? new Date(job.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
+                      <td style={{ padding: '12px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <Avatar name={job.company} />
+                          <span style={{ color: 'white', fontWeight: 700 }}>{job.company}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 20px', color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{job.role}</td>
+                      <td style={{ padding: '12px 20px' }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 20, background: cfg.badge, color: cfg.badgeText, fontFamily: 'monospace', letterSpacing: '0.08em' }}>{job.status}</span>
+                      </td>
+                      <td style={{ padding: '12px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>{job.location || '—'}</td>
+                      <td style={{ padding: '12px 20px' }}>{job.match_score ? <span style={{ color: cfg.accent, fontWeight: 800, fontSize: 13 }}>{job.match_score}%</span> : <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}</td>
+                      <td style={{ padding: '12px 20px', color: 'rgba(255,255,255,0.25)', fontSize: 11, fontFamily: 'monospace' }}>
+                        {job.applied_date ? new Date(job.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                      </td>
                     </tr>
                   )
                 })}
                 {jobs.length === 0 && (
-                  <tr><td colSpan={6} className="py-20 text-center">
-                    <p className="text-4xl mb-3">📭</p>
-                    <p className="font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>No applications yet</p>
-                    <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>Click "+ Add Job" to get started</p>
+                  <tr><td colSpan={6} style={{ padding: '60px 20px', textAlign: 'center' }}>
+                    <p style={{ fontSize: 32, marginBottom: 8 }}>📭</p>
+                    <p style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', fontSize: 12, letterSpacing: '0.1em' }}>NO APPLICATIONS YET — CLICK + ADD JOB</p>
                   </td></tr>
                 )}
               </tbody>
@@ -300,6 +411,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      <style>{`@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }`}</style>
     </div>
   )
 }
